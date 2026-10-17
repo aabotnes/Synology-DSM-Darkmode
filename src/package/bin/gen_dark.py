@@ -9,15 +9,17 @@ layout are never touched, so icons, photos and wallpapers keep their look.
 Each override is prefixed with "html " so it outranks the original rule even
 when that rule uses !important, regardless of which file loads first.
 
-Usage: gen_dark.py OUTPUT CSS_ROOT [CSS_ROOT ...]
+Usage: gen_dark.py [--bundle TGZ] OUTPUT CSS_ROOT [CSS_ROOT ...]
 Must stay compatible with the Python 3.8 that ships with DSM 7.
 """
 
 import colorsys
 import gzip
 import os
+import posixpath
 import re
 import sys
+import tarfile
 
 NAMED = {
     "white": (255, 255, 255), "black": (0, 0, 0), "silver": (192, 192, 192),
@@ -118,6 +120,13 @@ def dark_border(c):
     return from_hls(h, 0.2 + (1 - l) * 0.25, min(s, 0.2) * 0.5, c[3])
 
 
+def dark_shadow(c):
+    # Light, visible shadows are used as outlines and grid lines.
+    if c[3] < 0.2:
+        return None
+    return dark_border(c)
+
+
 def recolor(value, fn):
     """Map every colour in value through fn; colours fn leaves alone stay as they are."""
 
@@ -128,6 +137,42 @@ def recolor(value, fn):
         return fn(c) or m.group(0)
 
     return COLOR_RE.sub(sub, value)
+
+
+URL_RE = re.compile(r"url\((?:\"[^\"]*\"|'[^']*'|[^)]*)\)", re.I)
+GRADIENT_RE = re.compile(r"(?:repeating-)?(?:linear|radial|conic)-gradient\((?:[^()]|\([^()]*\))*\)", re.I)
+
+
+def absolute_url(tok, base):
+    """Rewrite url(...) against the web folder of its stylesheet, or None if unknown."""
+    inner = tok[4:-1].strip().strip("\"'")
+    if re.match(r"^([a-z][a-z0-9+.-]*:|/)", inner, re.I):
+        return tok
+    if base is None:
+        return None
+    path, sep, query = inner.partition("?")
+    return 'url("%s%s%s")' % (posixpath.normpath(posixpath.join(base, path)), sep, query)
+
+
+def background_image(value, shorthand, base=None):
+    """The background-image a background declaration sets, recoloured, or None."""
+    layers = []
+    for m in re.finditer(URL_RE.pattern + "|" + GRADIENT_RE.pattern, value, re.I):
+        tok = m.group(0)
+        if tok.lower().startswith("url"):
+            # Our file is served from another folder, so relative URLs must be resolved.
+            tok = absolute_url(tok, base)
+            if tok is None:
+                return None
+            layers.append(tok)
+        else:
+            layers.append(recolor(tok, dark_bg))
+    if layers:
+        return ", ".join(layers)
+    if value.strip().lower() == "none" or shorthand:
+        # A shorthand without an image resets it to none.
+        return "none"
+    return None
 
 
 def first_color(value):
@@ -149,7 +194,7 @@ def color_value(value, fn):
     return None
 
 
-def convert_decl(prop, value):
+def convert_decl(prop, value, base=None):
     """Map one declaration to dark-mode declarations (list of (prop, value)).
 
     Colours that are already fine are emitted unchanged on purpose: every
@@ -180,17 +225,25 @@ def convert_decl(prop, value):
     if prop in ("background", "background-image"):
         if "var(" in value:
             return []
-        if "gradient(" in value and "url(" not in value:
-            return [(prop, recolor(value, dark_bg))]
+        out = []
         if prop == "background":
-            # Only the colour: re-emitting the shorthand would reset sprite positions.
-            tail = re.sub(r"url\([^)]*\)", "", value)
+            tail = URL_RE.sub("", value)
+            tail = GRADIENT_RE.sub("", tail)
             col = first_color(tail)
             if col:
-                return [("background-color", recolor(col, dark_bg))]
-            if re.match(r"^(none|transparent)$", tail.strip(), re.I):
-                return [("background-color", "transparent")]
-        return []
+                out.append(("background-color", recolor(col, dark_bg)))
+            elif re.match(r"^(none|transparent)$", tail.strip(), re.I):
+                out.append(("background-color", "transparent"))
+        # The image is emitted too, even unchanged: an icon set by a specific
+        # rule must keep beating a boosted hover gradient from a vaguer rule.
+        image = background_image(value, prop == "background", base)
+        if image:
+            out.append(("background-image", image))
+        return out
+    if prop == "box-shadow":
+        if "var(" in value or not (first_color(value) or value.strip().lower() == "none"):
+            return []
+        return [(prop, recolor(value, dark_shadow))]
     if prop in BORDER_PROPS:
         target = "border-color" if prop == "border" else prop if prop.endswith("-color") else prop + "-color"
         if prop.endswith("-color"):
@@ -246,7 +299,7 @@ def prefix_selector(sel):
     return ", ".join(out)
 
 
-def convert(css, out, wrap=None):
+def convert(css, out, base=None):
     i = 0
     n = len(css)
     while i < n:
@@ -265,7 +318,7 @@ def convert(css, out, wrap=None):
             continue
         if low.startswith(("@media", "@supports", "@layer", "@document")):
             inner = []
-            convert(body, inner)
+            convert(body, inner, base)
             if inner:
                 out.append(head + " {\n" + "".join(inner) + "}\n")
             continue
@@ -273,7 +326,7 @@ def convert(css, out, wrap=None):
             continue
         decls = []
         for k, v in split_decls(body):
-            decls.extend(convert_decl(k, v))
+            decls.extend(convert_decl(k, v, base))
         if not decls:
             continue
         sel = prefix_selector(head)
@@ -314,11 +367,29 @@ def read_css(path):
         return fh.read()
 
 
+WEB_ROOT = "/usr/syno/synoman"
+
+
+def web_dir(path):
+    """URL folder a stylesheet is served from, or None if it isn't served by DSM."""
+    d = posixpath.dirname(path)
+    if d == WEB_ROOT or d.startswith(WEB_ROOT + "/"):
+        return d[len(WEB_ROOT):] or "/"
+    m = re.match(r"^/var/packages/([^/]+)/target/ui(/.*)?$", d)
+    if m:
+        return "/webman/3rdparty/" + m.group(1) + (m.group(2) or "")
+    return None
+
+
 def main(argv):
+    bundle = None
+    if len(argv) > 2 and argv[1] == "--bundle":
+        bundle, argv = argv[2], argv[:1] + argv[3:]
     if len(argv) < 3:
-        print("usage: gen_dark.py OUTPUT CSS_ROOT [CSS_ROOT ...]", file=sys.stderr)
+        print("usage: gen_dark.py [--bundle TGZ] OUTPUT CSS_ROOT [CSS_ROOT ...]", file=sys.stderr)
         return 2
     output, roots = argv[1], argv[2:]
+    used = []
     seen = set()
     rules = []
     count = 0
@@ -332,12 +403,13 @@ def main(argv):
         try:
             css = strip_comments(read_css(path))
             before = len(rules)
-            convert(css, rules)
+            convert(css, rules, web_dir(path))
         except Exception as exc:  # one odd file must not stop the whole theme
             failed += 1
             print("skipped %s: %s" % (path, exc), file=sys.stderr)
             continue
         count += 1
+        used.append(path)
         top = "/".join(path.split("/")[:6])
         per_root[top] = per_root.get(top, 0) + len(rules) - before
     unique = list(dict.fromkeys(rules))
@@ -346,6 +418,12 @@ def main(argv):
         fh.write("/* Generated by DSM Dark Mode from %d stylesheets. */\n" % count)
         fh.writelines(unique)
     os.replace(tmp, output)
+    if bundle:
+        # A copy of every stylesheet read, for troubleshooting from the Dark Mode app.
+        with tarfile.open(bundle + ".tmp", "w:gz") as tar:
+            for path in used:
+                tar.add(path, arcname=path.lstrip("/"))
+        os.replace(bundle + ".tmp", bundle)
     print("generated %d rules from %d stylesheets (%d skipped)" % (len(unique), count, failed))
     for top, n in sorted(per_root.items(), key=lambda kv: -kv[1])[:15]:
         print("  %6d  %s" % (n, top))

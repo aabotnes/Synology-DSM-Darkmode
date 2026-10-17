@@ -7,9 +7,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import gen_dark  # noqa: E402
 
 
-def run(css):
+def run(css, base="/webman/app"):
     out = []
-    gen_dark.convert(gen_dark.strip_comments(css), out)
+    gen_dark.convert(gen_dark.strip_comments(css), out, base)
     return "".join(out)
 
 
@@ -42,8 +42,34 @@ class Convert(unittest.TestCase):
     def test_shorthand_keeps_sprite(self):
         out = run(".icon{background:#fff url(a.png) no-repeat 0 -32px}")
         self.assertIn("background-color:", out)
-        self.assertNotIn("url(", out)
+        self.assertIn('background-image: url("/webman/app/a.png") !important', out)
         self.assertNotIn("no-repeat", out)
+        self.assertNotIn("-32px", out)
+
+    def test_icon_survives_boosted_hover_gradient(self):
+        # A vague hover gradient must not wipe an icon set by a specific rule.
+        out = run(".btn:hover{background-image:linear-gradient(#fff,#eee)} .bar .btn.icon-x{background:url(x.png) no-repeat}")
+        self.assertIn('html .bar .btn.icon-x {\n  background-image: url("/webman/app/x.png") !important;', out)
+
+    def test_urls_resolved(self):
+        out = run(".a{background:url('../img/a.png?v=2')} .b{background-image:url(data:image/png;base64,AA)} .c{background:url(/x.png)}")
+        self.assertIn('url("/webman/img/a.png?v=2")', out)
+        self.assertIn("url(data:image/png;base64,AA)", out)
+        self.assertIn("url(/x.png)", out)
+        self.assertNotIn("background-image", run(".a{background:url(a.png)}", base=None))
+
+    def test_web_dir(self):
+        self.assertEqual(gen_dark.web_dir("/usr/syno/synoman/webman/modules/Pkg/style.css"), "/webman/modules/Pkg")
+        self.assertEqual(gen_dark.web_dir("/var/packages/Foo/target/ui/css/a.css"), "/webman/3rdparty/Foo/css")
+        self.assertIsNone(gen_dark.web_dir("/tmp/a.css"))
+
+    def test_colour_only_shorthand_resets_image(self):
+        self.assertIn("background-image: none", run(".a{background:#eee}"))
+
+    def test_light_shadow_outline_darkened(self):
+        out = run(".tile{box-shadow:0 0 0 1px #e3e7ea} .pop{box-shadow:0 2px 6px rgba(0,0,0,.2)}")
+        self.assertNotIn("#e3e7ea", out)
+        self.assertIn("rgba(0,0,0,.2)", out)
 
     def test_border_shorthand_maps_to_side_colour(self):
         out = run(".row{border-bottom:1px solid #e5e5e5}")
@@ -74,10 +100,11 @@ class Convert(unittest.TestCase):
         out = run(".a{color:var(--x);background:none;border-color:transparent}")
         self.assertIn("color: var(--x) !important", out)
         self.assertIn("background-color: transparent !important", out)
+        self.assertIn("background-image: none !important", out)
         self.assertIn("border-color: transparent !important", out)
 
     def test_layout_only_rules_dropped(self):
-        self.assertEqual(run(".a{width:10px;background:url(a.png) 0 0}"), "")
+        self.assertEqual(run(".a{width:10px;background-position:0 -16px}"), "")
 
     def test_rgba_and_hsl(self):
         out = run(".a{background-color:rgba(255,255,255,.8)} .b{color:hsl(0,0%,20%)}")

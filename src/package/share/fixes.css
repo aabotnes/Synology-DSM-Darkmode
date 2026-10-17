@@ -1,0 +1,11 @@
+/*
+ * Final fixes, loaded after the generated theme and more specific than it.
+ */
+
+/* Dropdown arrow buttons are a light sprite. Invert the sprite only: a dark
+ * background colour under the filter would come out light again. */
+html body .x-form-trigger,
+html body .syno-ux-combobox-trigger {
+    background-color: transparent !important;
+    filter: invert(0.88) hue-rotate(180deg) !important;
+}

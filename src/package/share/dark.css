@@ -106,10 +106,8 @@ input, textarea, select,
 input::placeholder, textarea::placeholder, .x-form-empty-field { color: #8a9096 !important; }
 input[type="checkbox"], input[type="radio"] { accent-color: #6ab0f3 !important; }
 
-/* Checkboxes and combo arrows are drawn as sprite images, so tint them. */
-div.syno-ux-checkbox-icon,
-img.x-form-trigger.x-form-arrow-trigger,
-img.syno-ux-combobox-trigger {
+/* Checkbox sprites are images, so tint them. Combo arrows: see fixes.css. */
+div.syno-ux-checkbox-icon {
     filter: invert(0.85) hue-rotate(180deg) !important;
 }
 

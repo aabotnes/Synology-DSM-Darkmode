@@ -53,8 +53,8 @@ generate() {
     echo "python: $py ($("$py" --version 2>&1))"
     mkdir -p "$VAR_DIR"
     # shellcheck disable=SC2086  # SCAN_ROOTS holds globs on purpose
-    if "$py" "$PKG_DIR/bin/gen_dark.py" "$VAR_DIR/generated.css" $SCAN_ROOTS 2>&1; then
-        chmod 644 "$VAR_DIR/generated.css"
+    if "$py" "$PKG_DIR/bin/gen_dark.py" --bundle "$PKG_DIR/ui/dsm-styles.tgz" "$VAR_DIR/generated.css" $SCAN_ROOTS 2>&1; then
+        chmod 644 "$VAR_DIR/generated.css" "$PKG_DIR/ui/dsm-styles.tgz"
     else
         echo "warning: could not generate the theme from DSM's styles"
     fi
@@ -71,6 +71,7 @@ render() {
             [ "$(cat "$VAR_DIR/mode" 2>/dev/null)" = "auto" ] && echo "@media (prefers-color-scheme: dark) {"
             cat "$PKG_DIR/share/dark.css"
             cat "$VAR_DIR/generated.css" 2>/dev/null
+            cat "$PKG_DIR/share/fixes.css"
             [ "$(cat "$VAR_DIR/mode" 2>/dev/null)" = "auto" ] && echo "}"
         } > "$tmp"
     fi

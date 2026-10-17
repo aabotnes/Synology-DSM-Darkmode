@@ -42,6 +42,8 @@ The **Dark Mode** app in the DSM main menu shows whether the theme is on and whe
 - `darkmode revert` removes exactly that line.
 - The package serves `dark.css` itself. Starting the package fills it with the theme and stopping it empties it, so switching needs no root.
 - `darkmode apply` also builds the theme from your NAS's own stylesheets (DSM and every installed package): each rule that sets a light background, dark text or light border gets a dark-mode twin, the way Dark Reader works, but done once on the NAS. Images, icons and wallpapers are left alone. It uses the Python 3 that ships with DSM 7; without it, only the hand-written base theme in `src/package/share/dark.css` is used.
+- `src/package/share/fixes.css` holds a few hand-made fixes that load after the generated theme.
+- The Dark Mode app links to a copy of all stylesheets the build read, which helps when reporting a screen that still looks wrong.
 - After installing or updating other packages, run the Dark Mode task once (or reboot) so their screens are included.
 - Some base selectors come from [danslabs/synology-dsm-dark-mode](https://github.com/danslabs/synology-dsm-dark-mode) (MIT, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 

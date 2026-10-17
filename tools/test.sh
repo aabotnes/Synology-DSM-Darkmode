@@ -29,7 +29,7 @@ wizard_mode_always=true sh src/scripts/postinst
 sh src/scripts/start-stop-status start
 grep -q 'one-time setup' "$T/log" || fail "missing setup hint before apply"
 sh src/scripts/start-stop-status status || fail "status should be running"
-cmp -s "$T/target/ui/dark.css" src/package/share/dark.css || fail "theme not served"
+head -c "$(wc -c < src/package/share/dark.css)" "$T/target/ui/dark.css" | cmp -s - src/package/share/dark.css || fail "theme not served"
 [ "$(cat "$T/var/enabled")" = 1 ] || fail "enabled flag not set"
 
 # Apply twice: one import line, gz in sync, original rules kept.
@@ -47,6 +47,8 @@ grep -q 'html .x-window' "$T/target/ui/dark.css" || fail "generated rules not se
 grep -q 'html .gzonly:hover' "$T/var/generated.css" || fail "gzip-only stylesheet missed"
 [ "$(grep -c 'html .card' "$T/var/generated.css")" = 1 ] || fail "symlink loop scanned twice"
 grep -q 'generated' "$T/target/ui/last-run.txt" || fail "setup log not published"
+tar tzf "$T/target/ui/dsm-styles.tgz" | grep -q "pkgcenter/style.css" || fail "style bundle missing"
+grep -q "html body .x-form-trigger" "$T/target/ui/dark.css" || fail "fixes not served"
 grep -q 'DSM-DARKMODE\|webman/3rdparty' "$T/var/generated.css" && fail "own import leaked into generated theme"
 rm "$T/log"; sh src/scripts/start-stop-status start
 [ ! -e "$T/log" ] || fail "setup hint shown after apply"
