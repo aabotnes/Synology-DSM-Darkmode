@@ -29,6 +29,12 @@ class Convert(unittest.TestCase):
         col = out.split("color: ")[1].split(" ")[0]
         self.assertGreater(lightness(col), 0.7)
 
+    def test_grey_buttons_go_dark(self):
+        for grey in ("#8a949e", "#b6c0c9", "#4a5056", "#6b7277"):
+            out = run(".btn{background-color:%s}" % grey)
+            col = out.split("background-color: ")[1].split(" ")[0]
+            self.assertLess(lightness(col), 0.22, grey)
+
     def test_light_text_and_dark_background_kept(self):
         out = run(".tip{color:#fff;background:#222}")
         self.assertIn("color: #fff !important", out)
@@ -113,7 +119,7 @@ class RealDsmSample(unittest.TestCase):
         self.assertGreater(lightness(label.split("color: ")[1].split(" ")[0]), 0.7)
 
     def test_selection_highlight_stays_see_through_white(self):
-        self.assertIn("html .launch-icon.sds-desktop-icon-selected {\n  background-color: rgba(255,255,255,.3) !important;", self.out)
+        self.assertIn("html .launch-icon.sds-desktop-icon-selected {\n  background-color: rgba(255, 255, 255, 0.15) !important;", self.out)
 
     def test_brand_badge_kept(self):
         self.assertIn("background-color: #057feb !important", self.out)

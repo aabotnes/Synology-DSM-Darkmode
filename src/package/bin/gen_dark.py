@@ -97,13 +97,22 @@ def from_hls(h, l, s, a):
 
 def dark_bg(c):
     h, l, s = hls(c)
-    # See-through white is a hover or selection highlight; it works on dark too.
+    # Saturated fills (primary buttons, badges, progress bars) keep their colour.
+    if s > 0.35 and l < 0.65:
+        return None
     if c[3] <= 0.5:
+        # See-through white is a hover or selection highlight. Keep it, but
+        # fainter, so it reads as a highlight and not as a grey surface.
+        if l < 0.5:
+            return None
+        return fmt(c[0], c[1], c[2], c[3] * 0.5)
+    if l < 0.25:
         return None
-    # Saturated mid-tone fills (buttons, badges, progress bars) keep their colour.
-    if l < 0.35 or (s > 0.35 and l < 0.65):
-        return None
-    new_l = 0.11 + (1 - l) * 0.3
+    if l < 0.65:
+        # Mid greys (secondary buttons, toolbars) go dark, just above panels.
+        new_l = 0.15 + (l - 0.25) * 0.15
+    else:
+        new_l = 0.11 + (1 - l) * 0.3
     return from_hls(h, new_l, min(s, 0.25) * 0.6, c[3])
 
 
