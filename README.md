@@ -41,7 +41,7 @@ The **Dark Mode** app in the DSM main menu shows whether the theme is on and whe
 - `darkmode apply` adds one line at the top of `/usr/syno/synoman/webman/resources/css/desktop.css` that imports `/webman/3rdparty/DarkMode/dark.css`, and rebuilds the `.gz` copy nginx serves. It keeps a copy of the original in `/var/packages/DarkMode/var/backup/`. Running it again does nothing.
 - `darkmode revert` removes exactly that line.
 - The package serves `dark.css` itself. Starting the package fills it with the theme and stopping it empties it, so switching needs no root.
-- The theme inverts the page and rotates hues back, the same approach as Dark Reader's filter mode, and flips photos and videos back so they keep their real colours. It covers every DSM app without needing per-screen rules. Some icons drawn in CSS may look inverted.
+- The theme recolours DSM's own window, panel, grid, form, menu, taskbar and widget styles with a dark palette, so wallpapers, photos and app icons keep their real colours. Some selectors come from [danslabs/synology-dsm-dark-mode](https://github.com/danslabs/synology-dsm-dark-mode) (MIT, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). Third-party packages with their own hard-coded colours may still show light areas.
 
 Tested against a simulated DSM file layout (`tools/test.sh`); it has not been run on real hardware yet, so please open an issue with your DSM version if something looks off.
 

@@ -1,42 +1,214 @@
 /*
  * DSM Dark Mode theme.
  *
- * DSM's UI is built from thousands of ExtJS rules and inline styles, so instead
- * of recolouring each one this inverts the whole page and rotates hues back,
- * the same technique Dark Reader's "filter" mode uses. Photos, video and other
- * media are inverted a second time so they keep their real colours.
+ * Recolours DSM's own ExtJS and Vue classes instead of inverting the page, so
+ * wallpapers, photos and app icons keep their real colours. Every rule needs
+ * !important because this file is @imported ahead of DSM's own rules.
+ *
+ * Palette
+ *   #1e2124  window and panel background
+ *   #17191b  taskbar, headers, recessed areas
+ *   #26292c  inputs, alternating rows, cards
+ *   #33383d  hover and selection
+ *   #d8dade  text
+ *   #9aa0a6  secondary text
+ *   #3a3d40  borders
+ *   #6ab0f3  accent
+ *
+ * Many selectors are adapted from danslabs/synology-dsm-dark-mode
+ * (https://github.com/danslabs/synology-dsm-dark-mode), used under the MIT
+ * License, Copyright (c) 2026 Dan (danslabs). See THIRD_PARTY_NOTICES.md.
  */
 
-html {
-    background: #fff !important;
-    filter: invert(0.9) hue-rotate(180deg) !important;
+/* ---- Window chrome (ExtJS dialogs, Control Panel, File Station) ---- */
+
+.x-window-tl, .x-window-tr, .x-window-tc,
+.x-window-ml, .x-window-mr, .x-window-mc,
+.x-window-bl, .x-window-br, .x-window-bc,
+.x-window-header, .x-window-body {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+.x-window-header-text { color: #d8dade !important; }
+
+.v-window-header-wrapper, .window-header-tool-wrapper {
+    background-color: #17191b !important;
+    color: #d8dade !important;
+}
+.v-window-header-title { color: #d8dade !important; }
+
+/* ---- Panels, layouts, toolbars, tabs ---- */
+
+.x-panel-body, .x-panel-bwrap, .x-panel-header,
+.x-panel-tl, .x-panel-tr, .x-panel-tc, .x-panel-ml, .x-panel-mr, .x-panel-mc,
+.x-panel-bl, .x-panel-br, .x-panel-bc,
+.x-border-layout-ct, .x-box-inner, .x-column-inner,
+.x-fieldset, .x-fieldset-body,
+.v-window-body, .v-layout, .v-fieldset-body,
+.module-list-layout, .v-module-list, .app-modules-wrapper, .home-screen {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
 }
 
-img,
-video,
-canvas,
-picture,
-embed,
-object,
-[style*="background-image"],
-[style*="url("] {
-    filter: invert(1) hue-rotate(180deg) !important;
+.x-toolbar, .x-panel-tbar, .x-panel-bbar, .x-panel-fbar,
+.x-tab-panel-header, .x-tab-panel-footer, .x-tab-strip-wrap {
+    background-color: #17191b !important;
+    border-color: #3a3d40 !important;
+}
+.x-tab-strip span.x-tab-strip-text { color: #9aa0a6 !important; }
+.x-tab-strip .x-tab-strip-active span.x-tab-strip-text { color: #d8dade !important; }
+
+.v-fieldset-title-wrapper { background-color: #1e2124 !important; }
+.v-fieldset-title, .x-fieldset-header-text,
+.module-section-item-text, .module-item-text, .module-item-title { color: #d8dade !important; }
+.module-item:hover, .module-item-option:hover { background-color: #26292c !important; }
+
+/* ---- Grids, lists and trees (Task Scheduler, logs, File Station) ---- */
+
+.x-grid3, .x-grid3-body, .x-grid3-scroller,
+.x-list-wrap, .x-list-body, .x-list-body-inner {
+    background-color: #1e2124 !important;
+}
+.x-grid3-row, .x-list-body dl {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+    border-color: #2c2f32 !important;
+}
+.x-grid3-row-alt { background-color: #26292c !important; }
+.x-grid3-row-over, .x-list-over { background-color: #2b2f33 !important; }
+.x-grid3-row-selected, .x-grid3-row-selected td, .x-list-selected { background-color: #33383d !important; }
+.x-grid3-cell-inner, .x-grid3-hd-inner, .x-list-body em { color: #d8dade !important; }
+.x-grid3-hd-row td, .x-grid3-header, .x-grid3-header-inner, .x-list-header, .x-list-header-inner {
+    background-color: #17191b !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
 }
 
-/* Don't flip media twice when it sits inside an element we already flipped. */
-[style*="background-image"] img,
-[style*="background-image"] video,
-[style*="background-image"] canvas,
-[style*="url("] img,
-[style*="url("] video,
-[style*="url("] canvas {
-    filter: none !important;
+.x-tree-node, .x-tree-node a span, .x-tree-node-anchor { color: #d8dade !important; }
+.x-tree-node .x-tree-node-over { background-color: #2b2f33 !important; }
+.x-tree-node .x-tree-selected { background-color: #33383d !important; }
+
+/* ---- Forms ---- */
+
+.x-form-display-field, .x-form-item, .x-form-item-label, .syno-ux-item-label,
+.x-form-cb-label, .syno-ux-displayfield {
+    color: #d8dade !important;
+}
+input, textarea, select,
+.x-form-text, .x-form-field, .x-form-field-wrap.x-form-field-trigger-wrap,
+.v-select2-wrapper .input-wrapper, input.v-select2-input {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+input::placeholder, textarea::placeholder, .x-form-empty-field { color: #8a9096 !important; }
+input[type="checkbox"], input[type="radio"] { accent-color: #6ab0f3 !important; }
+
+/* Checkboxes and combo arrows are drawn as sprite images, so tint them. */
+div.syno-ux-checkbox-icon,
+img.x-form-trigger.x-form-arrow-trigger,
+img.syno-ux-combobox-trigger {
+    filter: invert(0.85) hue-rotate(180deg) !important;
 }
 
-/* Soften box shadows, which turn into glowing outlines once inverted. */
-.x-shadow,
-.x-window,
-.x-menu,
-.x-layer {
-    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15) !important;
+/* ---- Menus, dropdowns, tooltips ---- */
+
+.x-menu, .x-menu-list, .x-combo-list, .x-combo-list-inner, .x-tip, .x-tip-body,
+.x-boundlist, .syno-ux-menu {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+.x-menu-item, .x-menu-item-text, .x-combo-list-item, .x-tip-body { color: #d8dade !important; }
+.x-menu-item-active, .x-combo-selected { background-color: #33383d !important; }
+
+/* ---- Taskbar, widgets, main menu ---- */
+
+#sds-taskbar, .taskbar-wrapper {
+    background-color: rgba(23, 25, 27, 0.92) !important;
+}
+
+.v-widget-window, .v-widget-item, .v-widget-item-content, .sds-widget-gridpanel {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+}
+.v-widget-header, .v-widget-item-header {
+    background-color: #17191b !important;
+    color: #d8dade !important;
+}
+.v-widget-item-header-title-text { color: #d8dade !important; }
+
+.syno-sds-dropdown-menu {
+    background-color: rgba(30, 33, 36, 0.94) !important;
+    border-color: #3a3d40 !important;
+}
+.syno-sds-dropdown-menu .search-field-input {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+.syno-sds-dropdown-menu .dropdown-item-icon .text,
+.syno-sds-dropdown-menu li[aria-label] .text {
+    color: #d8dade !important;
+}
+
+/* ---- Charts ---- */
+
+svg rect[fill="#ffffff" i], svg rect[fill="#fff" i], svg rect[fill="white" i] {
+    fill: #26292c !important;
+}
+/* Resource Monitor draws its charts on canvas, which can't be recoloured. */
+.x-window canvas, .v-window canvas {
+    filter: invert(1) hue-rotate(180deg) contrast(0.65) !important;
+}
+
+/* ---- Scrollbars ---- */
+
+::-webkit-scrollbar { background-color: #17191b !important; }
+::-webkit-scrollbar-thumb { background-color: #3a3d40 !important; }
+* { scrollbar-color: #3a3d40 #17191b; }
+
+/* ---- Package Center ---- */
+
+input.synopkg-category-combobox, input.synopkg-sort-menu {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+}
+.syno-pkglist-badge:empty { display: none !important; }
+.syno-pkg-button-open .x-btn-text { color: #6ab0f3 !important; }
+
+/* ---- Container Manager ---- */
+
+.overview-page, .docker-page-layout {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+}
+.docker-package .overview-page .row .overview-panel,
+.overview-panel, .docker-status-panel, .docker-migrater-panel-wrapper,
+.docker-yaml-code-editor, .registry-wrapper {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+.overview-panel-infomation-status-text-title, .overview-panel-image-header-title,
+.overview-panel-stats-header-title, .docker-project-name-link, .docker-container-name-link {
+    color: #d8dade !important;
+}
+
+/* ---- Secure sign-in and iCloud Photo Sync ---- */
+
+.method-card-wrapper .method-card,
+.authenticator-setting .mask-wrapper .mask-desc-ct,
+.ics-card, .ics-info-table {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+}
+.method-card-wrapper .method-card .card-info .title,
+.method-card-wrapper .method-card .card-info .content,
+.method-card-wrapper .method-card .card-info .signin_method,
+.ics-card-title, .ics-section-title, .ics-status-title,
+.ics-info-table td:last-child, .ics-acct-name {
+    color: #d8dade !important;
 }
