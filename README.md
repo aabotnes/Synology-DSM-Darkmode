@@ -52,4 +52,4 @@ tools/test.sh     # run the script tests
 tools/build.sh    # writes dist/DarkMode-<VERSION>.spk
 ```
 
-Pushing a `v*` tag builds the package and publishes it as a GitHub release.
+Every push to `main` runs the tests and builds the package. When `VERSION` holds a version that hasn't been released yet, it is published as a GitHub release.
