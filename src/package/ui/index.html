@@ -18,6 +18,7 @@
     code { flex: 1; padding: 6px 8px; background: #f3f3f3; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; overflow-wrap: anywhere; }
     button { padding: 4px 12px; border: 1px solid #bbb; border-radius: 4px; background: #fafafa; cursor: pointer; }
     p.note { color: #555; }
+    pre { background: #f3f3f3; border: 1px solid #ddd; border-radius: 4px; padding: 8px; font-size: 12px; white-space: pre-wrap; max-height: 180px; overflow: auto; }
 </style>
 </head>
 <body>
@@ -26,6 +27,9 @@
     <span id="theme" class="pill">Theme: checking…</span>
     <span id="hook" class="pill">Setup: checking…</span>
 </div>
+
+<h2>Last setup run</h2>
+<pre id="log">Not run yet.</pre>
 
 <h2>One-time setup</h2>
 <p class="note">DSM only lets the system itself change its own look, so dark mode needs one task that runs as root. It also reapplies dark mode after DSM updates.</p>
@@ -74,6 +78,11 @@
         else if (css.indexOf("prefers-color-scheme") !== -1) set("theme", "Theme: follows your computer", "ok");
         else set("theme", "Theme: always dark", "ok");
     }).catch(function () { set("theme", "Theme: unknown", "warn"); });
+
+    fetch("last-run.txt", { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error();
+        return r.text();
+    }).then(function (t) { document.getElementById("log").textContent = t; }).catch(function () {});
 
     fetch("/webman/resources/css/desktop.css", { cache: "no-store" }).then(function (r) { return r.text(); }).then(function (css) {
         if (css.indexOf("DSM-DARKMODE") !== -1) set("hook", "Setup: done", "ok");

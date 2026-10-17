@@ -45,17 +45,18 @@ refresh_gz() {
 # Build overrides from the stylesheets on this NAS. Without Python the
 # hand-written theme in share/dark.css is used on its own.
 generate() {
-    py=$(command -v python3 || ls /usr/local/bin/python3* /usr/bin/python3* 2>/dev/null | head -n 1)
+    py=$(command -v python3 || ls /usr/bin/python3* /usr/local/bin/python3* 2>/dev/null | head -n 1)
     if [ -z "$py" ]; then
-        echo "warning: python3 not found, using the built-in theme only" >&2
+        echo "warning: python3 not found, using the built-in theme only"
         return 0
     fi
+    echo "python: $py ($("$py" --version 2>&1))"
     mkdir -p "$VAR_DIR"
     # shellcheck disable=SC2086  # SCAN_ROOTS holds globs on purpose
-    if "$py" "$PKG_DIR/bin/gen_dark.py" "$VAR_DIR/generated.css" $SCAN_ROOTS; then
+    if "$py" "$PKG_DIR/bin/gen_dark.py" "$VAR_DIR/generated.css" $SCAN_ROOTS 2>&1; then
         chmod 644 "$VAR_DIR/generated.css"
     else
-        echo "warning: could not generate the theme from DSM's styles" >&2
+        echo "warning: could not generate the theme from DSM's styles"
     fi
 }
 
@@ -152,7 +153,18 @@ status() {
 }
 
 case "$1" in
-    apply) apply ;;
+    apply)
+        # Keep a copy of the output where the Dark Mode app can show it.
+        log="$VAR_DIR/last-run.txt"
+        mkdir -p "$VAR_DIR"
+        ( date '+%Y-%m-%d %H:%M:%S'; apply ) > "$log.tmp" 2>&1
+        rc=$?
+        cat "$log.tmp"
+        mv "$log.tmp" "$log"
+        chmod 644 "$log"
+        [ -d "$PKG_DIR/ui" ] && cp "$log" "$PKG_DIR/ui/last-run.txt" && chmod 644 "$PKG_DIR/ui/last-run.txt"
+        exit $rc
+        ;;
     revert) revert ;;
     status) status ;;
     render) render ;;

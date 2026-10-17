@@ -15,6 +15,9 @@ ORIG=$(cat "$T/css/desktop.css")
 
 mkdir -p "$T/apps/pkgcenter"
 printf '.card{background:#fff url(x.png) no-repeat 0 -32px;color:#414b55}\n' > "$T/apps/pkgcenter/style.css"
+mkdir -p "$T/apps/gzonly"
+printf '.gzonly:hover{background:#fff}\n' | gzip > "$T/apps/gzonly/style.css.gz"
+ln -s "$T/apps" "$T/apps/pkgcenter/loop"
 export DARKMODE_PKG_DIR="$T/target" DARKMODE_VAR_DIR="$T/var" DARKMODE_CSS_DIR="$T/css" DARKMODE_SKIP_ROOT_CHECK=1
 export DARKMODE_SCAN_ROOTS="$T/css $T/apps"
 export SYNOPKG_PKGDEST="$T/target" SYNOPKG_PKGVAR="$T/var" SYNOPKG_TEMP_LOGFILE="$T/log"
@@ -41,6 +44,9 @@ X
 $DM status | grep -q '^hooked' || fail "status should say hooked"
 grep -q 'html .card' "$T/var/generated.css" || fail "app stylesheet not converted"
 grep -q 'html .x-window' "$T/target/ui/dark.css" || fail "generated rules not served"
+grep -q 'html .gzonly:hover' "$T/var/generated.css" || fail "gzip-only stylesheet missed"
+[ "$(grep -c 'html .card' "$T/var/generated.css")" = 1 ] || fail "symlink loop scanned twice"
+grep -q 'generated' "$T/target/ui/last-run.txt" || fail "setup log not published"
 grep -q 'DSM-DARKMODE\|webman/3rdparty' "$T/var/generated.css" && fail "own import leaked into generated theme"
 rm "$T/log"; sh src/scripts/start-stop-status start
 [ ! -e "$T/log" ] || fail "setup hint shown after apply"
@@ -72,7 +78,7 @@ sed -n 2p "$T/css/desktop.css" | grep -q DSM-DARKMODE || fail "import not after 
 # Root is required without the test override; missing file is an error.
 env -u DARKMODE_SKIP_ROOT_CHECK sh "$T/target/bin/darkmode" apply >/dev/null 2>&1 && [ "$(id -u)" != 0 ] && fail "ran without root"
 rm "$T/css/desktop.css"
-$DM apply 2>/dev/null && fail "apply succeeded with no stylesheet"
+$DM apply >/dev/null 2>&1 && fail "apply succeeded with no stylesheet"
 
 for j in src/WIZARD_UIFILES/install_uifile src/package/ui/config src/conf/privilege; do
     python3 -m json.tool "$j" >/dev/null || fail "bad JSON: $j"
