@@ -117,5 +117,36 @@ class Convert(unittest.TestCase):
         self.assertEqual(out.count("!important"), 1)
 
 
+class RealDsmSample(unittest.TestCase):
+    """Rules copied from DSM 7's desktop.css."""
+
+    @classmethod
+    def setUpClass(cls):
+        here = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(here, "fixtures", "dsm-desktop-sample.css")) as fh:
+            cls.out = run(fh.read(), base="/webman/resources/css")
+
+    def test_parses_minified_media_and_keyframes(self):
+        self.assertIn("@media(-webkit-min-device-pixel-ratio: 1.5)", self.out)
+        self.assertNotIn("rotate(", self.out)
+
+    def test_assets_point_at_dsm_folder(self):
+        self.assertIn('url("/webman/resources/css/assets/ec74b77b4e3591de6f2a.png")', self.out)
+        self.assertNotIn("url(./", self.out)
+
+    def test_main_menu_goes_dark_with_light_labels(self):
+        menu = self.out.split("html .syno-sds-dropdown-menu {")[1].split("}")[0]
+        col = menu.split("background-color: ")[1].split(" ")[0]
+        self.assertLess(lightness(col), 0.2)
+        label = self.out.split("html .launch-icon.app-item-icon.dropdown-item-icon .text {")[1].split("}")[0]
+        self.assertGreater(lightness(label.split("color: ")[1].split(" ")[0]), 0.7)
+
+    def test_selection_highlight_stays_see_through_white(self):
+        self.assertIn("html .launch-icon.sds-desktop-icon-selected {\n  background-color: rgba(255,255,255,.3) !important;", self.out)
+
+    def test_brand_badge_kept(self):
+        self.assertIn("background-color: #057feb !important", self.out)
+
+
 if __name__ == "__main__":
     unittest.main()
