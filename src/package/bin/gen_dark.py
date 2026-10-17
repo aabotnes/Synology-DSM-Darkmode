@@ -123,13 +123,6 @@ def dark_border(c):
     return from_hls(h, 0.2 + (1 - l) * 0.25, min(s, 0.2) * 0.5, c[3])
 
 
-def dark_shadow(c):
-    # Light, visible shadows are used as outlines and grid lines.
-    if c[3] < 0.2:
-        return None
-    return dark_border(c)
-
-
 def recolor(value, fn):
     """Map every colour in value through fn; colours fn leaves alone stay as they are."""
 
@@ -144,38 +137,6 @@ def recolor(value, fn):
 
 URL_RE = re.compile(r"url\((?:\"[^\"]*\"|'[^']*'|[^)]*)\)", re.I)
 GRADIENT_RE = re.compile(r"(?:repeating-)?(?:linear|radial|conic)-gradient\((?:[^()]|\([^()]*\))*\)", re.I)
-
-
-def absolute_url(tok, base):
-    """Rewrite url(...) against the web folder of its stylesheet, or None if unknown."""
-    inner = tok[4:-1].strip().strip("\"'")
-    if re.match(r"^([a-z][a-z0-9+.-]*:|/)", inner, re.I):
-        return tok
-    if base is None:
-        return None
-    path, sep, query = inner.partition("?")
-    return 'url("%s%s%s")' % (posixpath.normpath(posixpath.join(base, path)), sep, query)
-
-
-def background_image(value, shorthand, base=None):
-    """The background-image a background declaration sets, recoloured, or None."""
-    layers = []
-    for m in re.finditer(URL_RE.pattern + "|" + GRADIENT_RE.pattern, value, re.I):
-        tok = m.group(0)
-        if tok.lower().startswith("url"):
-            # Our file is served from another folder, so relative URLs must be resolved.
-            tok = absolute_url(tok, base)
-            if tok is None:
-                return None
-            layers.append(tok)
-        else:
-            layers.append(recolor(tok, dark_bg))
-    if layers:
-        return ", ".join(layers)
-    if value.strip().lower() == "none" or shorthand:
-        # A shorthand without an image resets it to none.
-        return "none"
-    return None
 
 
 def first_color(value):
@@ -225,28 +186,17 @@ def convert_decl(prop, value, base=None):
     if prop == "background-color":
         new = color_value(value, dark_bg)
         return [(prop, new)] if new else []
-    if prop in ("background", "background-image"):
-        if "var(" in value:
-            return []
-        out = []
-        if prop == "background":
-            tail = URL_RE.sub("", value)
-            tail = GRADIENT_RE.sub("", tail)
-            col = first_color(tail)
-            if col:
-                out.append(("background-color", recolor(col, dark_bg)))
-            elif re.match(r"^(none|transparent)$", tail.strip(), re.I):
-                out.append(("background-color", "transparent"))
-        # The image is emitted too, even unchanged: an icon set by a specific
-        # rule must keep beating a boosted hover gradient from a vaguer rule.
-        image = background_image(value, prop == "background", base)
-        if image:
-            out.append(("background-image", image))
-        return out
-    if prop == "box-shadow":
-        if "var(" in value or not (first_color(value) or value.strip().lower() == "none"):
-            return []
-        return [(prop, recolor(value, dark_shadow))]
+    if prop == "background":
+        # Only the colour. Re-emitting images or gradients from a boosted rule
+        # replaces icons and sprites that more specific rules or inline styles
+        # set, which breaks app and package icons.
+        tail = GRADIENT_RE.sub("", URL_RE.sub("", value))
+        col = first_color(tail)
+        if col and "var(" not in value:
+            return [("background-color", recolor(col, dark_bg))]
+        if re.match(r"^(none|transparent)$", tail.strip(), re.I):
+            return [("background-color", "transparent")]
+        return []
     if prop in BORDER_PROPS:
         target = "border-color" if prop == "border" else prop if prop.endswith("-color") else prop + "-color"
         if prop.endswith("-color"):
