@@ -4,18 +4,22 @@
 #   darkmode apply    hook the dark stylesheet into DSM's web UI   (needs root)
 #   darkmode revert   remove the hook and restore DSM's styles     (needs root)
 #   darkmode status   show whether the hook is in place
+#   darkmode render   rebuild the served stylesheet (used by start/stop)
 #
 # The hook is a single @import line at the top of DSM's desktop.css that pulls
 # in /webman/3rdparty/DarkMode/dark.css, a file this package serves itself.
 # Starting/stopping the package fills/empties that file, so dark mode can be
-# toggled from Package Center without root. "apply" is idempotent and is meant
-# to run from a boot-up task so the hook comes back after DSM updates.
+# toggled from Package Center without root. "apply" also regenerates dark
+# overrides from every stylesheet installed on the NAS (gen_dark.py). It is
+# idempotent and is meant to run from a boot-up task so the hook and the
+# generated theme follow DSM and package updates.
 
 PKG=DarkMode
 PKG_DIR=${DARKMODE_PKG_DIR:-/var/packages/$PKG/target}
 VAR_DIR=${DARKMODE_VAR_DIR:-/var/packages/$PKG/var}
 CSS_DIR=${DARKMODE_CSS_DIR:-/usr/syno/synoman/webman/resources/css}
 TARGETS=${DARKMODE_TARGETS:-desktop.css}
+SCAN_ROOTS=${DARKMODE_SCAN_ROOTS:-"/usr/syno/synoman /var/packages/*/target/ui"}
 MARK="/*DSM-DARKMODE*/"
 IMPORT="${MARK}@import url(\"/webman/3rdparty/$PKG/dark.css\");"
 
@@ -36,6 +40,42 @@ refresh_gz() {
     [ -f "$1.gz" ] || return 0
     tmp="$1.gz.darkmode.$$"
     gzip -9 -c "$1" > "$tmp" && overwrite "$1.gz" "$tmp"
+}
+
+# Build overrides from the stylesheets on this NAS. Without Python the
+# hand-written theme in share/dark.css is used on its own.
+generate() {
+    py=$(command -v python3 || ls /usr/local/bin/python3* /usr/bin/python3* 2>/dev/null | head -n 1)
+    if [ -z "$py" ]; then
+        echo "warning: python3 not found, using the built-in theme only" >&2
+        return 0
+    fi
+    mkdir -p "$VAR_DIR"
+    # shellcheck disable=SC2086  # SCAN_ROOTS holds globs on purpose
+    if "$py" "$PKG_DIR/bin/gen_dark.py" "$VAR_DIR/generated.css" $SCAN_ROOTS; then
+        chmod 644 "$VAR_DIR/generated.css"
+    else
+        echo "warning: could not generate the theme from DSM's styles" >&2
+    fi
+}
+
+# Write the stylesheet DSM imports: the theme when enabled, empty otherwise.
+render() {
+    out="$PKG_DIR/ui/dark.css"
+    tmp="$out.tmp.$$"
+    if [ "$(cat "$VAR_DIR/enabled" 2>/dev/null)" != "1" ]; then
+        echo "/* DSM Dark Mode is stopped. */" > "$tmp"
+    else
+        {
+            [ "$(cat "$VAR_DIR/mode" 2>/dev/null)" = "auto" ] && echo "@media (prefers-color-scheme: dark) {"
+            cat "$PKG_DIR/share/dark.css"
+            cat "$VAR_DIR/generated.css" 2>/dev/null
+            [ "$(cat "$VAR_DIR/mode" 2>/dev/null)" = "auto" ] && echo "}"
+        } > "$tmp"
+    fi
+    if [ -f "$out" ]; then overwrite "$out" "$tmp"; else mv "$tmp" "$out"; fi
+    # The generated theme can be large; let nginx serve a compressed copy.
+    gzip -9 -c "$out" > "$out.gz.tmp" && { if [ -f "$out.gz" ]; then overwrite "$out.gz" "$out.gz.tmp"; else mv "$out.gz.tmp" "$out.gz"; fi; }
 }
 
 is_hooked() {
@@ -73,6 +113,8 @@ apply() {
         hooked=1
     done
     if [ "$hooked" = "1" ]; then
+        generate
+        render
         echo "Dark mode hook is in place. Reload DSM in your browser."
     else
         echo "error: no DSM stylesheet could be hooked" >&2
@@ -113,5 +155,6 @@ case "$1" in
     apply) apply ;;
     revert) revert ;;
     status) status ;;
-    *) echo "usage: $0 {apply|revert|status}" >&2; exit 2 ;;
+    render) render ;;
+    *) echo "usage: $0 {apply|revert|status|render}" >&2; exit 2 ;;
 esac

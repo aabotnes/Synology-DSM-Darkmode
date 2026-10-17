@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Test
-        run: tools/test.sh
+        run: |
+          python3 tools/test_gen.py
+          tools/test.sh
 
       - name: Build
         id: build

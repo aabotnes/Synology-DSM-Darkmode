@@ -13,7 +13,10 @@ printf '.x-window{color:#000}\n' > "$T/css/desktop.css"
 gzip -9 -k "$T/css/desktop.css"
 ORIG=$(cat "$T/css/desktop.css")
 
+mkdir -p "$T/apps/pkgcenter"
+printf '.card{background:#fff url(x.png) no-repeat 0 -32px;color:#414b55}\n' > "$T/apps/pkgcenter/style.css"
 export DARKMODE_PKG_DIR="$T/target" DARKMODE_VAR_DIR="$T/var" DARKMODE_CSS_DIR="$T/css" DARKMODE_SKIP_ROOT_CHECK=1
+export DARKMODE_SCAN_ROOTS="$T/css $T/apps"
 export SYNOPKG_PKGDEST="$T/target" SYNOPKG_PKGVAR="$T/var" SYNOPKG_TEMP_LOGFILE="$T/log"
 DM="sh $T/target/bin/darkmode"
 
@@ -24,6 +27,7 @@ sh src/scripts/start-stop-status start
 grep -q 'one-time setup' "$T/log" || fail "missing setup hint before apply"
 sh src/scripts/start-stop-status status || fail "status should be running"
 cmp -s "$T/target/ui/dark.css" src/package/share/dark.css || fail "theme not served"
+[ "$(cat "$T/var/enabled")" = 1 ] || fail "enabled flag not set"
 
 # Apply twice: one import line, gz in sync, original rules kept.
 $DM apply >/dev/null
@@ -35,6 +39,9 @@ cmp -s "$T/var/backup/desktop.css" - <<X || fail "backup wrong"
 $ORIG
 X
 $DM status | grep -q '^hooked' || fail "status should say hooked"
+grep -q 'html .card' "$T/var/generated.css" || fail "app stylesheet not converted"
+grep -q 'html .x-window' "$T/target/ui/dark.css" || fail "generated rules not served"
+grep -q 'DSM-DARKMODE\|webman/3rdparty' "$T/var/generated.css" && fail "own import leaked into generated theme"
 rm "$T/log"; sh src/scripts/start-stop-status start
 [ ! -e "$T/log" ] || fail "setup hint shown after apply"
 
