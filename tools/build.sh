@@ -12,7 +12,7 @@ trap 'rm -rf "$WORK"' EXIT
 # Reproducible, root-owned archives.
 TAR_OPTS="--owner=0 --group=0 --numeric-owner --sort=name --mtime=@0"
 
-tar $TAR_OPTS -czf "$WORK/package.tgz" -C "$SRC/package" .
+tar $TAR_OPTS --exclude=__pycache__ -czf "$WORK/package.tgz" -C "$SRC/package" .
 
 CHECKSUM=$(md5sum "$WORK/package.tgz" | cut -d' ' -f1)
 EXTRACTSIZE=$(du -sk "$SRC/package" | cut -f1)
