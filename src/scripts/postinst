@@ -1,0 +1,9 @@
+#!/bin/sh
+# Remember the theme mode picked in the install wizard.
+if [ "$wizard_mode_auto" = "true" ]; then
+    echo auto > "$SYNOPKG_PKGVAR/mode"
+elif [ "$wizard_mode_always" = "true" ] || [ ! -f "$SYNOPKG_PKGVAR/mode" ]; then
+    echo always > "$SYNOPKG_PKGVAR/mode"
+fi
+chmod 755 "$SYNOPKG_PKGDEST/bin/darkmode"
+exit 0

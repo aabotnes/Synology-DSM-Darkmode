@@ -1,0 +1,31 @@
+[
+    {
+        "step_title": "Dark Mode",
+        "items": [
+            {
+                "type": "singleselect",
+                "desc": "When should DSM be dark?",
+                "subitems": [
+                    {
+                        "key": "wizard_mode_always",
+                        "desc": "Always",
+                        "defaultValue": true
+                    },
+                    {
+                        "key": "wizard_mode_auto",
+                        "desc": "Follow my computer's light/dark setting",
+                        "defaultValue": false
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "step_title": "One-time setup",
+        "items": [
+            {
+                "desc": "DSM only lets the system itself change its own look, so dark mode needs one small task that runs as root. You only do this once, and it reapplies itself after DSM updates.<br><br>1. Open <b>Control Panel &gt; Task Scheduler</b>.<br>2. Click <b>Create &gt; Triggered Task &gt; User-defined script</b>.<br>3. Name it <b>Dark Mode</b>, set User to <b>root</b> and Event to <b>Boot-up</b>.<br>4. On the <b>Task Settings</b> tab, paste this into Run command:<br><br><code>/var/packages/DarkMode/target/bin/darkmode apply</code><br><br>5. Click <b>OK</b>, select the task and click <b>Run</b> once.<br>6. Reload DSM in your browser.<br><br>You can find these steps again in the Dark Mode app in the main menu."
+            }
+        ]
+    }
+]

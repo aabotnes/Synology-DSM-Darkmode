@@ -1,0 +1,117 @@
+#!/bin/sh
+# DSM Dark Mode helper.
+#
+#   darkmode apply    hook the dark stylesheet into DSM's web UI   (needs root)
+#   darkmode revert   remove the hook and restore DSM's styles     (needs root)
+#   darkmode status   show whether the hook is in place
+#
+# The hook is a single @import line at the top of DSM's desktop.css that pulls
+# in /webman/3rdparty/DarkMode/dark.css, a file this package serves itself.
+# Starting/stopping the package fills/empties that file, so dark mode can be
+# toggled from Package Center without root. "apply" is idempotent and is meant
+# to run from a boot-up task so the hook comes back after DSM updates.
+
+PKG=DarkMode
+PKG_DIR=${DARKMODE_PKG_DIR:-/var/packages/$PKG/target}
+VAR_DIR=${DARKMODE_VAR_DIR:-/var/packages/$PKG/var}
+CSS_DIR=${DARKMODE_CSS_DIR:-/usr/syno/synoman/webman/resources/css}
+TARGETS=${DARKMODE_TARGETS:-desktop.css}
+MARK="/*DSM-DARKMODE*/"
+IMPORT="${MARK}@import url(\"/webman/3rdparty/$PKG/dark.css\");"
+
+need_root() {
+    if [ "$(id -u)" != "0" ] && [ -z "$DARKMODE_SKIP_ROOT_CHECK" ]; then
+        echo "error: '$1' must run as root (use a root Task Scheduler task or sudo)" >&2
+        exit 1
+    fi
+}
+
+# Write $2 into $1 in place, so DSM's owner and permissions stay untouched.
+overwrite() {
+    cat "$2" > "$1" && rm -f "$2"
+}
+
+# nginx serves the pre-compressed .gz when it exists, so keep it in sync.
+refresh_gz() {
+    [ -f "$1.gz" ] || return 0
+    tmp="$1.gz.darkmode.$$"
+    gzip -9 -c "$1" > "$tmp" && overwrite "$1.gz" "$tmp"
+}
+
+is_hooked() {
+    grep -qF "$MARK" "$1" 2>/dev/null
+}
+
+apply() {
+    need_root apply
+    hooked=0
+    for name in $TARGETS; do
+        f="$CSS_DIR/$name"
+        if [ ! -f "$f" ]; then
+            echo "skip: $f not found (unsupported DSM version?)" >&2
+            continue
+        fi
+        if is_hooked "$f"; then
+            echo "ok: $f already hooked"
+            hooked=1
+            continue
+        fi
+        mkdir -p "$VAR_DIR/backup"
+        cp -p "$f" "$VAR_DIR/backup/$name"
+        [ -f "$f.gz" ] && cp -p "$f.gz" "$VAR_DIR/backup/$name.gz"
+
+        # @import must come first; only an @charset rule may precede it.
+        tmp="$f.darkmode.$$"
+        if head -n 1 "$f" | grep -q '^@charset'; then
+            { head -n 1 "$f"; echo "$IMPORT"; tail -n +2 "$f"; } > "$tmp"
+        else
+            { echo "$IMPORT"; cat "$f"; } > "$tmp"
+        fi
+        overwrite "$f" "$tmp" || { echo "error: could not write $f" >&2; exit 1; }
+        refresh_gz "$f"
+        echo "hooked: $f"
+        hooked=1
+    done
+    if [ "$hooked" = "1" ]; then
+        echo "Dark mode hook is in place. Reload DSM in your browser."
+    else
+        echo "error: no DSM stylesheet could be hooked" >&2
+        exit 1
+    fi
+}
+
+revert() {
+    need_root revert
+    for name in $TARGETS; do
+        f="$CSS_DIR/$name"
+        is_hooked "$f" || continue
+        tmp="$f.darkmode.$$"
+        grep -vF "$MARK" "$f" > "$tmp"
+        overwrite "$f" "$tmp" || { echo "error: could not write $f" >&2; exit 1; }
+        refresh_gz "$f"
+        echo "restored: $f"
+    done
+    echo "DSM styles restored. Reload DSM in your browser."
+}
+
+status() {
+    for name in $TARGETS; do
+        if is_hooked "$CSS_DIR/$name"; then
+            echo "hooked: $CSS_DIR/$name"
+        else
+            echo "not hooked: $CSS_DIR/$name"
+        fi
+    done
+    if [ -s "$PKG_DIR/ui/dark.css" ] && grep -q '{' "$PKG_DIR/ui/dark.css"; then
+        echo "theme: on ($(cat "$VAR_DIR/mode" 2>/dev/null || echo always))"
+    else
+        echo "theme: off (package stopped)"
+    fi
+}
+
+case "$1" in
+    apply) apply ;;
+    revert) revert ;;
+    status) status ;;
+    *) echo "usage: $0 {apply|revert|status}" >&2; exit 2 ;;
+esac

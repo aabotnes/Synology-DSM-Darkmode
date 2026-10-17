@@ -1,0 +1,42 @@
+/*
+ * DSM Dark Mode theme.
+ *
+ * DSM's UI is built from thousands of ExtJS rules and inline styles, so instead
+ * of recolouring each one this inverts the whole page and rotates hues back,
+ * the same technique Dark Reader's "filter" mode uses. Photos, video and other
+ * media are inverted a second time so they keep their real colours.
+ */
+
+html {
+    background: #fff !important;
+    filter: invert(0.9) hue-rotate(180deg) !important;
+}
+
+img,
+video,
+canvas,
+picture,
+embed,
+object,
+[style*="background-image"],
+[style*="url("] {
+    filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Don't flip media twice when it sits inside an element we already flipped. */
+[style*="background-image"] img,
+[style*="background-image"] video,
+[style*="background-image"] canvas,
+[style*="url("] img,
+[style*="url("] video,
+[style*="url("] canvas {
+    filter: none !important;
+}
+
+/* Soften box shadows, which turn into glowing outlines once inverted. */
+.x-shadow,
+.x-window,
+.x-menu,
+.x-layer {
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15) !important;
+}

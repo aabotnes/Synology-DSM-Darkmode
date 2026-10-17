@@ -1,0 +1,1 @@
+Download **DarkMode-*.spk** below, then in DSM open **Package Center > Manual Install** and pick the file. The install wizard walks you through the one-time setup. Full steps are in the [README](https://github.com/aabotnes/Synology-DSM-Darkmode#install).

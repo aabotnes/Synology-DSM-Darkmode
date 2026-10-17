@@ -1,0 +1,40 @@
+#!/bin/sh
+# Turning the package on or off swaps the served stylesheet between the theme
+# and an empty file. DSM keeps importing it either way, so no root is needed.
+
+UI_CSS="$SYNOPKG_PKGDEST/ui/dark.css"
+THEME="$SYNOPKG_PKGDEST/share/dark.css"
+MODE=$(cat "$SYNOPKG_PKGVAR/mode" 2>/dev/null || echo always)
+
+theme_on() {
+    if [ "$MODE" = "auto" ]; then
+        { echo "@media (prefers-color-scheme: dark) {"; cat "$THEME"; echo "}"; } > "$UI_CSS"
+    else
+        cat "$THEME" > "$UI_CSS"
+    fi
+}
+
+theme_off() {
+    echo "/* DSM Dark Mode is stopped. */" > "$UI_CSS"
+}
+
+case "$1" in
+    start)
+        theme_on
+        if ! "$SYNOPKG_PKGDEST/bin/darkmode" status | grep -q '^hooked'; then
+            echo "Dark mode is on, but the one-time setup has not run yet. Open the Dark Mode app for the steps." > "$SYNOPKG_TEMP_LOGFILE"
+        fi
+        exit 0
+        ;;
+    stop)
+        theme_off
+        exit 0
+        ;;
+    status)
+        [ -s "$UI_CSS" ] && grep -q '{' "$UI_CSS" && exit 0
+        exit 3
+        ;;
+    *)
+        exit 1
+        ;;
+esac
