@@ -167,6 +167,34 @@ def color_value(value, fn):
     return None
 
 
+# Custom property values seen across all stylesheets, so declarations that use
+# var(--x) can be converted as the colour they really are.
+VARS = {}
+VAR_DEF_RE = re.compile(r"(--[\w-]+)\s*:\s*([^;{}]+)")
+VAR_USE_RE = re.compile(r"var\(\s*(--[\w-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)")
+
+
+def collect_vars(css):
+    """Remember the first colour value given to each custom property."""
+    for name, value in VAR_DEF_RE.findall(css):
+        value = re.sub(r"!\s*important", "", value, flags=re.I).strip()
+        if name not in VARS and (first_color(value) or "var(" in value):
+            VARS[name] = value
+
+
+def resolve_vars(value, depth=0):
+    """Replace var(--x, fallback) with its known value; unknown ones stay."""
+    if "var(" not in value or depth > 5:
+        return value
+
+    def sub(m):
+        if m.group(1) in VARS:
+            return VARS[m.group(1)]
+        return m.group(2).strip() if m.group(2) else m.group(0)
+
+    return resolve_vars(VAR_USE_RE.sub(sub, value), depth + 1)
+
+
 def convert_decl(prop, value, base=None):
     """Map one declaration to dark-mode declarations (list of (prop, value)).
 
@@ -177,6 +205,8 @@ def convert_decl(prop, value, base=None):
     """
     prop = prop.strip().lower()
     value = re.sub(r"!\s*important", "", value, flags=re.I).strip()
+    if not prop.startswith("--"):
+        value = resolve_vars(value)
     if prop.startswith("--"):
         if not first_color(value) or "url(" in value or "var(" in value:
             return []
@@ -357,6 +387,7 @@ def main(argv):
     count = 0
     failed = 0
     per_root = {}
+    sheets = []
     for path in css_files(roots):
         real = os.path.realpath(path)
         if real in seen or "/DarkMode/" in real:
@@ -364,6 +395,14 @@ def main(argv):
         seen.add(real)
         try:
             css = strip_comments(read_css(path))
+        except Exception as exc:
+            failed += 1
+            print("skipped %s: %s" % (path, exc), file=sys.stderr)
+            continue
+        collect_vars(css)
+        sheets.append((path, css))
+    for path, css in sheets:
+        try:
             before = len(rules)
             convert(css, rules, web_dir(path))
         except Exception as exc:  # one odd file must not stop the whole theme

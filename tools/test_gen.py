@@ -29,6 +29,19 @@ class Convert(unittest.TestCase):
         col = out.split("color: ")[1].split(" ")[0]
         self.assertGreater(lightness(col), 0.7)
 
+    def test_vars_resolved_to_real_colours(self):
+        gen_dark.VARS.clear()
+        css = ":root{--white:#fff;--ink:var(--dark);--dark:#414b55} .search{background-color:var(--white);color:var(--ink)} .x{color:var(--unknown, #000)} .y{color:var(--nope)}"
+        gen_dark.collect_vars(css)
+        out = run(css)
+        gen_dark.VARS.clear()
+        search = out.split("html .search {")[1].split("}")[0]
+        self.assertLess(lightness(search.split("background-color: ")[1].split(" ")[0]), 0.2)
+        self.assertGreater(lightness(search.split("color: ")[2].split(" ")[0]), 0.7)
+        x = out.split("html .x {")[1].split("}")[0]
+        self.assertGreater(lightness(x.split("color: ")[1].split(" ")[0]), 0.7)
+        self.assertIn("color: var(--nope) !important", out)
+
     def test_grey_buttons_go_dark(self):
         for grey in ("#8a949e", "#b6c0c9", "#4a5056", "#6b7277"):
             out = run(".btn{background-color:%s}" % grey)
