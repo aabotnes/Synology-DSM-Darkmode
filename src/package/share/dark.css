@@ -1,9 +1,14 @@
 /*
  * DSM Dark Mode theme.
  *
- * Recolours DSM's own ExtJS and Vue classes instead of inverting the page, so
- * wallpapers, photos and app icons keep their real colours. Every rule needs
- * !important because this file is @imported ahead of DSM's own rules.
+ * Hand-checked rules, layered with the theme generated on the NAS:
+ * - Generic ExtJS rules (panels, grids, forms, menus) have no prefix, so the
+ *   generated "html ..." rules, which follow DSM's own cascade, win over them.
+ * - Rules for specific DSM parts carry "html:not(#dm)", which counts as an ID
+ *   and so beats any generated class rule. The generator can't see colours
+ *   DSM sets through CSS variables, and these parts were checked by hand.
+ * Every rule needs !important because this file is @imported ahead of DSM's
+ * own rules.
  *
  * Palette
  *   #1e2124  window and panel background
@@ -22,53 +27,41 @@
 
 /* ---- Window chrome (ExtJS dialogs, Control Panel, File Station) ---- */
 
-.x-window-tl, .x-window-tr, .x-window-tc,
-.x-window-ml, .x-window-mr, .x-window-mc,
-.x-window-bl, .x-window-br, .x-window-bc,
-.x-window-header, .x-window-body {
+html:not(#dm) .x-window-tl, html:not(#dm) .x-window-tr, html:not(#dm) .x-window-tc, html:not(#dm) .x-window-ml, html:not(#dm) .x-window-mr, html:not(#dm) .x-window-mc, html:not(#dm) .x-window-bl, html:not(#dm) .x-window-br, html:not(#dm) .x-window-bc, html:not(#dm) .x-window-header, html:not(#dm) .x-window-body {
     background-color: #1e2124 !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
 }
-.x-window-header-text { color: #d8dade !important; }
+html:not(#dm) .x-window-header-text { color: #d8dade !important; }
 
-.v-window-header-wrapper, .window-header-tool-wrapper {
+html:not(#dm) .v-window-header-wrapper, html:not(#dm) .window-header-tool-wrapper {
     background-color: #17191b !important;
     color: #d8dade !important;
 }
-.v-window-header-title { color: #d8dade !important; }
+html:not(#dm) .v-window-header-title { color: #d8dade !important; }
 
 /* ---- Panels, layouts, toolbars, tabs ---- */
 
-.x-panel-body, .x-panel-bwrap, .x-panel-header,
-.x-panel-tl, .x-panel-tr, .x-panel-tc, .x-panel-ml, .x-panel-mr, .x-panel-mc,
-.x-panel-bl, .x-panel-br, .x-panel-bc,
-.x-border-layout-ct, .x-box-inner, .x-column-inner,
-.x-fieldset, .x-fieldset-body,
-.v-window-body, .v-layout, .v-fieldset-body,
-.module-list-layout, .v-module-list, .app-modules-wrapper, .home-screen {
+.x-panel-body, .x-panel-bwrap, .x-panel-header, .x-panel-tl, .x-panel-tr, .x-panel-tc, .x-panel-ml, .x-panel-mr, .x-panel-mc, .x-panel-bl, .x-panel-br, .x-panel-bc, .x-border-layout-ct, .x-box-inner, .x-column-inner, .x-fieldset, .x-fieldset-body, .v-window-body, .v-layout, .v-fieldset-body, .module-list-layout, .v-module-list, .app-modules-wrapper, .home-screen {
     background-color: #1e2124 !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
 }
 
-.x-toolbar, .x-panel-tbar, .x-panel-bbar, .x-panel-fbar,
-.x-tab-panel-header, .x-tab-panel-footer, .x-tab-strip-wrap {
+.x-toolbar, .x-panel-tbar, .x-panel-bbar, .x-panel-fbar, .x-tab-panel-header, .x-tab-panel-footer, .x-tab-strip-wrap {
     background-color: #17191b !important;
     border-color: #3a3d40 !important;
 }
 .x-tab-strip span.x-tab-strip-text { color: #9aa0a6 !important; }
 .x-tab-strip .x-tab-strip-active span.x-tab-strip-text { color: #d8dade !important; }
 
-.v-fieldset-title-wrapper { background-color: #1e2124 !important; }
-.v-fieldset-title, .x-fieldset-header-text,
-.module-section-item-text, .module-item-text, .module-item-title { color: #d8dade !important; }
-.module-item:hover, .module-item-option:hover { background-color: #26292c !important; }
+html:not(#dm) .v-fieldset-title-wrapper { background-color: #1e2124 !important; }
+html:not(#dm) .v-fieldset-title, html:not(#dm) .x-fieldset-header-text, html:not(#dm) .module-section-item-text, html:not(#dm) .module-item-text, html:not(#dm) .module-item-title { color: #d8dade !important; }
+html:not(#dm) .module-item:hover, html:not(#dm) .module-item-option:hover { background-color: #26292c !important; }
 
 /* ---- Grids, lists and trees (Task Scheduler, logs, File Station) ---- */
 
-.x-grid3, .x-grid3-body, .x-grid3-scroller,
-.x-list-wrap, .x-list-body, .x-list-body-inner {
+.x-grid3, .x-grid3-body, .x-grid3-scroller, .x-list-wrap, .x-list-body, .x-list-body-inner {
     background-color: #1e2124 !important;
 }
 .x-grid3-row, .x-list-body dl {
@@ -92,13 +85,10 @@
 
 /* ---- Forms ---- */
 
-.x-form-display-field, .x-form-item, .x-form-item-label, .syno-ux-item-label,
-.x-form-cb-label, .syno-ux-displayfield {
+.x-form-display-field, .x-form-item, .x-form-item-label, .syno-ux-item-label, .x-form-cb-label, .syno-ux-displayfield {
     color: #d8dade !important;
 }
-input, textarea, select,
-.x-form-text, .x-form-field, .x-form-field-wrap.x-form-field-trigger-wrap,
-.v-select2-wrapper .input-wrapper, input.v-select2-input {
+input, textarea, select, .x-form-text, .x-form-field, .x-form-field-wrap.x-form-field-trigger-wrap {
     background-color: #26292c !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
@@ -107,14 +97,13 @@ input::placeholder, textarea::placeholder, .x-form-empty-field { color: #8a9096 
 input[type="checkbox"], input[type="radio"] { accent-color: #6ab0f3 !important; }
 
 /* Checkbox sprites are images, so tint them. Combo arrows: see fixes.css. */
-div.syno-ux-checkbox-icon {
+html:not(#dm) div.syno-ux-checkbox-icon {
     filter: invert(0.85) hue-rotate(180deg) !important;
 }
 
 /* ---- Menus, dropdowns, tooltips ---- */
 
-.x-menu, .x-menu-list, .x-combo-list, .x-combo-list-inner, .x-tip, .x-tip-body,
-.x-boundlist, .syno-ux-menu {
+.x-menu, .x-menu-list, .x-combo-list, .x-combo-list-inner, .x-tip, .x-tip-body, .x-boundlist, .syno-ux-menu {
     background-color: #26292c !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
@@ -124,31 +113,30 @@ div.syno-ux-checkbox-icon {
 
 /* ---- Taskbar, widgets, main menu ---- */
 
-#sds-taskbar, .taskbar-wrapper {
+html:not(#dm) #sds-taskbar, html:not(#dm) .taskbar-wrapper {
     background-color: rgba(23, 25, 27, 0.92) !important;
 }
 
-.v-widget-window, .v-widget-item, .v-widget-item-content, .sds-widget-gridpanel {
+html:not(#dm) .v-widget-window, html:not(#dm) .v-widget-item, html:not(#dm) .v-widget-item-content, html:not(#dm) .sds-widget-gridpanel {
     background-color: #1e2124 !important;
     color: #d8dade !important;
 }
-.v-widget-header, .v-widget-item-header {
+html:not(#dm) .v-widget-header, html:not(#dm) .v-widget-item-header {
     background-color: #17191b !important;
     color: #d8dade !important;
 }
-.v-widget-item-header-title-text { color: #d8dade !important; }
+html:not(#dm) .v-widget-item-header-title-text { color: #d8dade !important; }
 
-.syno-sds-dropdown-menu {
+html:not(#dm) .syno-sds-dropdown-menu {
     background-color: rgba(30, 33, 36, 0.94) !important;
     border-color: #3a3d40 !important;
 }
-.syno-sds-dropdown-menu .search-field-input {
+html:not(#dm) .syno-sds-dropdown-menu .search-field-input {
     background-color: #26292c !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
 }
-.syno-sds-dropdown-menu .dropdown-item-icon .text,
-.syno-sds-dropdown-menu li[aria-label] .text {
+html:not(#dm) .syno-sds-dropdown-menu .dropdown-item-icon .text, html:not(#dm) .syno-sds-dropdown-menu li[aria-label] .text {
     color: #d8dade !important;
 }
 
@@ -164,49 +152,45 @@ svg rect[fill="#ffffff" i], svg rect[fill="#fff" i], svg rect[fill="white" i] {
 
 /* ---- Scrollbars ---- */
 
-::-webkit-scrollbar { background-color: #17191b !important; }
-::-webkit-scrollbar-thumb { background-color: #3a3d40 !important; }
-* { scrollbar-color: #3a3d40 #17191b; }
+html:not(#dm) ::-webkit-scrollbar { background-color: #17191b !important; }
+html:not(#dm) ::-webkit-scrollbar-thumb { background-color: #3a3d40 !important; }
+html:not(#dm) * { scrollbar-color: #3a3d40 #17191b; }
 
 /* ---- Package Center ---- */
 
-input.synopkg-category-combobox, input.synopkg-sort-menu {
-    background-color: #26292c !important;
-    color: #d8dade !important;
-}
-.syno-pkglist-badge:empty { display: none !important; }
-.syno-pkg-button-open .x-btn-text { color: #6ab0f3 !important; }
-
-/* ---- Container Manager ---- */
-
-.overview-page, .docker-page-layout {
-    background-color: #1e2124 !important;
-    color: #d8dade !important;
-}
-.docker-package .overview-page .row .overview-panel,
-.overview-panel, .docker-status-panel, .docker-migrater-panel-wrapper,
-.docker-yaml-code-editor, .registry-wrapper {
+html:not(#dm) .v-select2-wrapper .input-wrapper, html:not(#dm) input.v-select2-input {
     background-color: #26292c !important;
     color: #d8dade !important;
     border-color: #3a3d40 !important;
 }
-.overview-panel-infomation-status-text-title, .overview-panel-image-header-title,
-.overview-panel-stats-header-title, .docker-project-name-link, .docker-container-name-link {
+html:not(#dm) input.synopkg-category-combobox, html:not(#dm) input.synopkg-sort-menu {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+}
+html:not(#dm) .syno-pkglist-badge:empty { display: none !important; }
+html:not(#dm) .syno-pkg-button-open .x-btn-text { color: #6ab0f3 !important; }
+
+/* ---- Container Manager ---- */
+
+html:not(#dm) .overview-page, html:not(#dm) .docker-page-layout {
+    background-color: #1e2124 !important;
+    color: #d8dade !important;
+}
+html:not(#dm) .docker-package .overview-page .row .overview-panel, html:not(#dm) .overview-panel, html:not(#dm) .docker-status-panel, html:not(#dm) .docker-migrater-panel-wrapper, html:not(#dm) .docker-yaml-code-editor, html:not(#dm) .registry-wrapper {
+    background-color: #26292c !important;
+    color: #d8dade !important;
+    border-color: #3a3d40 !important;
+}
+html:not(#dm) .overview-panel-infomation-status-text-title, html:not(#dm) .overview-panel-image-header-title, html:not(#dm) .overview-panel-stats-header-title, html:not(#dm) .docker-project-name-link, html:not(#dm) .docker-container-name-link {
     color: #d8dade !important;
 }
 
 /* ---- Secure sign-in and iCloud Photo Sync ---- */
 
-.method-card-wrapper .method-card,
-.authenticator-setting .mask-wrapper .mask-desc-ct,
-.ics-card, .ics-info-table {
+html:not(#dm) .method-card-wrapper .method-card, html:not(#dm) .authenticator-setting .mask-wrapper .mask-desc-ct, html:not(#dm) .ics-card, html:not(#dm) .ics-info-table {
     background-color: #26292c !important;
     color: #d8dade !important;
 }
-.method-card-wrapper .method-card .card-info .title,
-.method-card-wrapper .method-card .card-info .content,
-.method-card-wrapper .method-card .card-info .signin_method,
-.ics-card-title, .ics-section-title, .ics-status-title,
-.ics-info-table td:last-child, .ics-acct-name {
+html:not(#dm) .method-card-wrapper .method-card .card-info .title, html:not(#dm) .method-card-wrapper .method-card .card-info .content, html:not(#dm) .method-card-wrapper .method-card .card-info .signin_method, html:not(#dm) .ics-card-title, html:not(#dm) .ics-section-title, html:not(#dm) .ics-status-title, html:not(#dm) .ics-info-table td:last-child, html:not(#dm) .ics-acct-name {
     color: #d8dade !important;
 }
